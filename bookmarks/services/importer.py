@@ -50,14 +50,14 @@ class TagCache:
         self.cache[tag.name.lower()] = tag
 
 
-def import_netscape_html(html: str, user: User):
+def import_netscape_bookmarks(html_or_json: str, user: User):
     result = ImportResult()
     import_start = timezone.now()
     try:
-        if len(html) > 1 and html[0] == '{':
-            netscape_bookmarks = json_parse(html)
+        if len(html_or_json) > 1 and html_or_json[0] == '{':
+            netscape_bookmarks = json_parse(html_or_json)
         else:
-            netscape_bookmarks = parse(html)
+            netscape_bookmarks = parse(html_or_json)
     except:
         logging.exception('Could not read bookmarks file.')
         raise
@@ -192,7 +192,10 @@ def _copy_bookmark_data(netscape_bookmark: NetscapeBookmark, bookmark: Bookmark)
         bookmark.date_added = parse_timestamp(netscape_bookmark.date_added)
     else:
         bookmark.date_added = timezone.now()
-    bookmark.date_modified = bookmark.date_added
+    if netscape_bookmark.date_modified:
+        bookmark.date_modified = parse_timestamp(netscape_bookmark.date_modified)
+    else:
+        bookmark.date_modified = bookmark.date_added
     bookmark.unread = False
     if netscape_bookmark.title:
         bookmark.title = netscape_bookmark.title

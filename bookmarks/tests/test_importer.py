@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from bookmarks.models import Bookmark, Tag, parse_tag_string
 from bookmarks.services import tasks
-from bookmarks.services.importer import import_netscape_html
+from bookmarks.services.importer import import_netscape_bookmarks
 from bookmarks.tests.helpers import BookmarkFactoryMixin, ImportTestMixin, BookmarkHtmlTag, disable_logging
 from bookmarks.utils import parse_timestamp
 
@@ -40,7 +40,7 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
                             add_date='3', tags='bar-tag, other-tag'),
         ]
         import_html = self.render_html(tags=html_tags)
-        result = import_netscape_html(import_html, self.get_or_create_test_user())
+        result = import_netscape_bookmarks(import_html, self.get_or_create_test_user())
 
         # Check result
         self.assertEqual(result.total, 3)
@@ -63,7 +63,7 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
                             add_date='3', tags='bar-tag, other-tag'),
         ]
         import_html = self.render_html(tags=html_tags)
-        import_netscape_html(import_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(import_html, self.get_or_create_test_user())
 
         # Change data, add some new data
         html_tags = [
@@ -78,7 +78,7 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
 
         # Import updated data
         import_html = self.render_html(tags=html_tags)
-        result = import_netscape_html(import_html, self.get_or_create_test_user())
+        result = import_netscape_bookmarks(import_html, self.get_or_create_test_user())
 
         # Check result
         self.assertEqual(result.total, 4)
@@ -99,7 +99,7 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
             BookmarkHtmlTag(),
         ]
         import_html = self.render_html(tags=html_tags)
-        result = import_netscape_html(import_html, self.get_or_create_test_user())
+        result = import_netscape_bookmarks(import_html, self.get_or_create_test_user())
 
         # Check result
         self.assertEqual(result.total, 3)
@@ -118,7 +118,7 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
             BookmarkHtmlTag(href='https://bar.com', tags='tag3'),
         ]
         import_html = self.render_html(tags=html_tags)
-        import_netscape_html(import_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(import_html, self.get_or_create_test_user())
 
         self.assertEqual(Tag.objects.count(), 3)
 
@@ -129,13 +129,13 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
             BookmarkHtmlTag(href='https://bar.com', tags='tag3'),
         ]
         import_html = self.render_html(tags=html_tags)
-        import_netscape_html(import_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(import_html, self.get_or_create_test_user())
 
         html_tags.append(
             BookmarkHtmlTag(href='https://baz.com', tags='tag4')
         )
         import_html = self.render_html(tags=html_tags)
-        import_netscape_html(import_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(import_html, self.get_or_create_test_user())
 
         self.assertEqual(Tag.objects.count(), 4)
 
@@ -146,7 +146,7 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
             BookmarkHtmlTag(href='https://bar.com', tags='tag1'),
         ]
         import_html = self.render_html(tags=html_tags)
-        import_netscape_html(import_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(import_html, self.get_or_create_test_user())
 
         self.assertEqual(Tag.objects.count(), 1)
 
@@ -155,13 +155,13 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
             BookmarkHtmlTag(href='https://example.com', tags='tag1'),
         ]
         import_html = self.render_html(tags=html_tags)
-        import_netscape_html(import_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(import_html, self.get_or_create_test_user())
 
         html_tags.append(
             BookmarkHtmlTag(href='https://example.com', tags='tag2, tag3')
         )
         import_html = self.render_html(tags=html_tags)
-        import_netscape_html(import_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(import_html, self.get_or_create_test_user())
 
         self.assertEqual(Bookmark.objects.count(), 1)
         self.assertEqual(Bookmark.objects.all()[0].tags.all().count(), 3)
@@ -174,7 +174,7 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
         ''')
 
         with patch.object(timezone, 'now', return_value=timezone.datetime(2021, 1, 1)):
-            import_netscape_html(test_html, self.get_or_create_test_user())
+            import_netscape_bookmarks(test_html, self.get_or_create_test_user())
 
             self.assertEqual(Bookmark.objects.count(), 1)
             self.assertEqual(Bookmark.objects.all()[0].date_added, timezone.datetime(2021, 1, 1))
@@ -183,12 +183,12 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
         test_html = self.render_html(tags=[
             BookmarkHtmlTag(href='https://example.com', title='Example.com')
         ])
-        import_netscape_html(test_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(test_html, self.get_or_create_test_user())
 
         test_html = self.render_html(tags=[
             BookmarkHtmlTag(href='https://example.com')
         ])
-        import_netscape_html(test_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(test_html, self.get_or_create_test_user())
 
         self.assertEqual(Bookmark.objects.count(), 1)
         self.assertEqual(Bookmark.objects.all()[0].title, 'Example.com')
@@ -197,12 +197,12 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
         test_html = self.render_html(tags=[
             BookmarkHtmlTag(href='https://example.com', description='Example.com')
         ])
-        import_netscape_html(test_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(test_html, self.get_or_create_test_user())
 
         test_html = self.render_html(tags=[
             BookmarkHtmlTag(href='https://example.com')
         ])
-        import_netscape_html(test_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(test_html, self.get_or_create_test_user())
 
         self.assertEqual(Bookmark.objects.count(), 1)
         self.assertEqual(Bookmark.objects.all()[0].description, 'Example.com')
@@ -212,7 +212,7 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
             <DT><A HREF="https://example.com" TAGS="tag 1, tag 2, tag 3">Example.com</A>
             <DD>Example.com
         ''')
-        import_netscape_html(test_html, self.get_or_create_test_user())
+        import_netscape_bookmarks(test_html, self.get_or_create_test_user())
 
         tags = Tag.objects.all()
         tag_names = [tag.name for tag in tags]
@@ -228,7 +228,7 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
             <DD>Missing URL
         ''')
 
-        import_result = import_netscape_html(test_html, self.get_or_create_test_user())
+        import_result = import_netscape_bookmarks(test_html, self.get_or_create_test_user())
 
         self.assertEqual(Bookmark.objects.count(), 0)
         self.assertEqual(import_result.success, 0)
@@ -239,6 +239,6 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
         test_html = self.render_html(tags_html='')
 
         with patch.object(tasks, 'schedule_bookmarks_without_snapshots') as mock_schedule_bookmarks_without_snapshots:
-            import_netscape_html(test_html, user)
+            import_netscape_bookmarks(test_html, user)
 
             mock_schedule_bookmarks_without_snapshots.assert_called_once_with(user)

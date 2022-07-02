@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from bookmarks.services.importer import import_netscape_html
+from bookmarks.services.importer import import_netscape_bookmarks
 
 
 class Command(BaseCommand):
@@ -18,4 +18,4 @@ class Command(BaseCommand):
             html = html_file.read()
         user = User.objects.get(username=username)
 
-        import_netscape_html(html, user)
+        import_netscape_bookmarks(html, user)

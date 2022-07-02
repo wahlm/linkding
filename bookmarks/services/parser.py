@@ -13,6 +13,7 @@ class NetscapeBookmark:
     title: str
     description: str
     date_added: str
+    date_modified: str
     tag_string: str
 
 
@@ -59,6 +60,7 @@ class BookmarkParser(HTMLParser):
             title='',
             description='',
             date_added=self.add_date,
+            date_modified=self.add_date,
             tag_string=self.tags,
         )
 
@@ -101,23 +103,26 @@ def grab_keys(bookmarks_data, bookmarks_list, path):
                 try:
                     val(url)
                     tags = item.get('tags', '')
-                    tag_path = ''
                     for tag in path:
                         if tags != '':
                             tags = tags + ','
                         tags = tags + tag
-                        if tag_path != '':
-                            tag_path = tag_path + ';'
-                        else:
-                            tag_path = '/p/'
-                        tag_path = tag_path + tag
-                    if tag_path != '':
-                        tags = tags + ',' + tag_path
+                    # Hack to add full path as a tag
+                    # tag_path = ''
+                    # for tag in path:
+                    #     if tag_path != '':
+                    #         tag_path = tag_path + ';'
+                    #     else:
+                    #         tag_path = '/p/'
+                    #     tag_path = tag_path + tag
+                    # if tag_path != '':
+                    #     tags = tags + ',' + tag_path
                     bookmark = NetscapeBookmark(
                         href=url,
                         title=item.get('title', '')[:512],
                         description='',
                         date_added=item.get('dateAdded', 0),
+                        date_modified=item.get('lastModified', 0),
                         tag_string=tags,
                     )
                     bookmarks_list.append(bookmark)
@@ -128,9 +133,9 @@ def grab_keys(bookmarks_data, bookmarks_list, path):
     return bookmarks_list
 
 
-def json_parse(html: str) -> List[NetscapeBookmark]:
+def json_parse(the_json: str) -> List[NetscapeBookmark]:
     bookmarks = []
     path = []
-    json_dict = json.loads(html)
+    json_dict = json.loads(the_json)
     grab_keys(json_dict, bookmarks, path)
     return bookmarks
