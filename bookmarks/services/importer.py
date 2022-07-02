@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from bookmarks.models import Bookmark, Tag, parse_tag_string
 from bookmarks.services import tasks
-from bookmarks.services.parser import parse, NetscapeBookmark
+from bookmarks.services.parser import parse, NetscapeBookmark, json_parse
 from bookmarks.utils import parse_timestamp
 
 logger = logging.getLogger(__name__)
@@ -53,9 +53,11 @@ class TagCache:
 def import_netscape_html(html: str, user: User):
     result = ImportResult()
     import_start = timezone.now()
-
     try:
-        netscape_bookmarks = parse(html)
+        if len(html) > 1 and html[0] == '{':
+            netscape_bookmarks = json_parse(html)
+        else:
+            netscape_bookmarks = parse(html)
     except:
         logging.exception('Could not read bookmarks file.')
         raise

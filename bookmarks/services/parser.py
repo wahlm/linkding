@@ -1,7 +1,11 @@
+import json
+import logging
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from typing import Dict, List
 
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 
 @dataclass
 class NetscapeBookmark:
@@ -81,3 +85,52 @@ def parse(html: str) -> List[NetscapeBookmark]:
     parser = BookmarkParser()
     parser.feed(html)
     return parser.bookmarks
+
+
+def grab_keys(bookmarks_data, bookmarks_list, path):
+    title = bookmarks_data['title']
+    code = bookmarks_data['typeCode']
+    if code == 2 and title != '':
+        path.append(title)
+    if 'children' in bookmarks_data:
+        for item in bookmarks_data['children']:
+            code = item.get('typeCode')
+            url = item.get('uri', None)
+            if code == 1 and url is not None:
+                val = URLValidator()
+                try:
+                    val(url)
+                    tags = item.get('tags', '')
+                    tag_path = ''
+                    for tag in path:
+                        if tags != '':
+                            tags = tags + ','
+                        tags = tags + tag
+                        if tag_path != '':
+                            tag_path = tag_path + ';'
+                        else:
+                            tag_path = '/p/'
+                        tag_path = tag_path + tag
+                    if tag_path != '':
+                        tags = tags + ',' + tag_path
+                    bookmark = NetscapeBookmark(
+                        href=url,
+                        title=item.get('title', '')[:512],
+                        description='',
+                        date_added=item.get('dateAdded', 0),
+                        tag_string=tags,
+                    )
+                    bookmarks_list.append(bookmark)
+                except ValidationError as e:
+                    logging.warning(f"URL ignored: {url}")
+            work_path = path.copy()
+            grab_keys(item, bookmarks_list, work_path)
+    return bookmarks_list
+
+
+def json_parse(html: str) -> List[NetscapeBookmark]:
+    bookmarks = []
+    path = []
+    json_dict = json.loads(html)
+    grab_keys(json_dict, bookmarks, path)
+    return bookmarks
