@@ -22,12 +22,25 @@ def append_query_param(context, **kwargs):
 
     # Append to or create query param
     for key in kwargs:
+        tags = []
         if query.__contains__(key):
             value = query.__getitem__(key) + ' '
+            tags = query.__getitem__(key).split(' ')
         else:
             value = ''
-        value = value + kwargs[key]
-        query.__setitem__(key, value)
+        if kwargs[key] in tags:
+            while kwargs[key] in tags:
+                tags.pop(tags.index(kwargs[key]))
+            if len(tags) == 0:
+                value = ''
+            else:
+                value = " ".join(tags)
+        else:
+            value = value + kwargs[key]
+        if value == '':
+            query.__delitem__(key)
+        else:
+            query.__setitem__(key, value)
 
     return query.urlencode()
 
