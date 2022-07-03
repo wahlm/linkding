@@ -52,6 +52,28 @@ class ImporterTestCase(TestCase, BookmarkFactoryMixin, ImportTestMixin):
         self.assertEqual(len(bookmarks), 3)
         self.assertBookmarksImported(html_tags)
 
+    def test_import_strange(self):
+        html_tags = [
+            BookmarkHtmlTag(href='https://routing.openstreetmap.de/?z=13&center=51.098779%2C14.340334',
+                            title='Example title', description='Example description',
+                            add_date='1', tags='example-tag'),
+        ]
+        import_html = self.render_html(tags=html_tags)
+        result = import_netscape_html(import_html, self.get_or_create_test_user())
+
+        # Check result
+        self.assertEqual(result.total, 1)
+        self.assertEqual(result.success, 1)
+        self.assertEqual(result.failed, 0)
+
+        # Check bookmarks
+        bookmarks = Bookmark.objects.all()
+        self.assertEqual(len(bookmarks), 1)
+        url_imported = bookmarks.first().url
+        url_original = html_tags[0].href
+        self.assertEqual(url_original, url_imported, "Imported URL was modified")
+        self.assertBookmarksImported(html_tags)
+
     def test_synchronize(self):
         # Initial import
         html_tags = [
