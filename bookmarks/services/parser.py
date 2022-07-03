@@ -89,11 +89,11 @@ def parse(html: str) -> List[NetscapeBookmark]:
     return parser.bookmarks
 
 
-def grab_keys(bookmarks_data, bookmarks_list, path):
+def grab_keys(bookmarks_data, bookmarks_list: List[NetscapeBookmark], path: List[str], level):
     title = bookmarks_data['title']
     code = bookmarks_data['typeCode']
     if code == 2 and title != '':
-        path.append(title)
+        path.append(str(level) + '-' + title)
     if 'children' in bookmarks_data:
         for item in bookmarks_data['children']:
             code = item.get('typeCode')
@@ -105,18 +105,18 @@ def grab_keys(bookmarks_data, bookmarks_list, path):
                     tags = item.get('tags', '')
                     for tag in path:
                         if tags != '':
-                            tags = tags + ','
-                        tags = tags + tag
+                            tags += ','
+                        tags += tag
                     # Hack to add full path as a tag
                     # tag_path = ''
                     # for tag in path:
                     #     if tag_path != '':
-                    #         tag_path = tag_path + ';'
+                    #         tag_path += ';'
                     #     else:
                     #         tag_path = '/p/'
-                    #     tag_path = tag_path + tag
+                    #     tag_path += tag
                     # if tag_path != '':
-                    #     tags = tags + ',' + tag_path
+                    #     tags += ',' + tag_path
                     bookmark = NetscapeBookmark(
                         href=url,
                         title=item.get('title', '')[:512],
@@ -125,17 +125,26 @@ def grab_keys(bookmarks_data, bookmarks_list, path):
                         date_modified=item.get('lastModified', 0),
                         tag_string=tags,
                     )
-                    bookmarks_list.append(bookmark)
+                    found = False
+                    for bookmark_iter in bookmarks_list:
+                        if bookmark_iter.href == url:
+                            if bookmark_iter.tag_string != '':
+                                bookmark_iter.tag_string += ','
+                            bookmark_iter.tag_string += tags
+                            found = True
+                    if not found:
+                        bookmarks_list.append(bookmark)
                 except ValidationError as e:
                     logging.warning(f"URL ignored: {url}")
             work_path = path.copy()
-            grab_keys(item, bookmarks_list, work_path)
+            grab_keys(item, bookmarks_list, work_path, level + 1)
     return bookmarks_list
 
 
 def json_parse(the_json: str) -> List[NetscapeBookmark]:
     bookmarks = []
     path = []
+    level = 0
     json_dict = json.loads(the_json)
-    grab_keys(json_dict, bookmarks, path)
+    grab_keys(json_dict, bookmarks, path, level)
     return bookmarks
